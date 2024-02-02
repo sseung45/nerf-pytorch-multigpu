@@ -538,7 +538,7 @@ def config_parser():
 
 
 def train(rank, world_size):
-    dist.init_process_group(backend='gloo', init_method='env://', world_size=world_size, rank=rank)
+    dist.init_process_group(backend='nccl', init_method='env://', world_size=world_size, rank=rank)
     #torch.cuda.set_device(rank)
     #device = torch.cuda.current_device()
     device = rank
