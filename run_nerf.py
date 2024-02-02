@@ -374,10 +374,10 @@ def render_rays(device,
     if perturb > 0.:
         # get intervals between samples
         mids = .5 * (z_vals[...,1:] + z_vals[...,:-1])
-        upper = torch.cat([mids, z_vals[...,-1:]], -1)
-        lower = torch.cat([z_vals[...,:1], mids], -1)
+        upper = torch.cat([mids, z_vals[...,-1:]], -1).to(device)
+        lower = torch.cat([z_vals[...,:1], mids], -1).to(device)
         # stratified samples in those intervals
-        t_rand = torch.rand(z_vals.shape)
+        t_rand = torch.rand(z_vals.shape).to(device)
 
         # Pytest, overwrite u with numpy's fixed random numbers
         if pytest:
