@@ -18,8 +18,17 @@ from load_deepvoxels import load_dv_data
 from load_blender import load_blender_data
 from load_LINEMOD import load_LINEMOD_data
 
+import torch.multiprocessing as mp
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+dist.init_process_group("nccl")
+rank = dist.get_rank()
+torch.cuda.set_device(rank)
+device = torch.cuda.current_device()
+world_size = dist.get_world_size()
+
 np.random.seed(0)
 DEBUG = False
 
@@ -189,6 +198,7 @@ def create_nerf(args):
     model = NeRF(D=args.netdepth, W=args.netwidth,
                  input_ch=input_ch, output_ch=output_ch, skips=skips,
                  input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs).to(device)
+    model = DDP(model, device_ids=[device])
     grad_vars = list(model.parameters())
 
     model_fine = None
@@ -196,6 +206,7 @@ def create_nerf(args):
         model_fine = NeRF(D=args.netdepth_fine, W=args.netwidth_fine,
                           input_ch=input_ch, output_ch=output_ch, skips=skips,
                           input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs).to(device)
+        model_fine = DDP(model_fine, device_dis=[device])
         grad_vars += list(model_fine.parameters())
 
     network_query_fn = lambda inputs, viewdirs, network_fn : run_network(inputs, viewdirs, network_fn,
@@ -531,7 +542,7 @@ def config_parser():
     return parser
 
 
-def train():
+def train(rank, world_size):
 
     parser = config_parser()
     args = parser.parse_args()
@@ -774,6 +785,7 @@ def train():
 
         loss.backward()
         optimizer.step()
+        dist.all_reduce(loss, op=dist.ReduceOP.SUM)
 
         # NOTE: IMPORTANT!
         ###   update learning rate   ###
@@ -789,7 +801,7 @@ def train():
         #####           end            #####
 
         # Rest is logging
-        if i%args.i_weights==0:
+        if rank == 0 and i%args.i_weights==0:
             path = os.path.join(basedir, expname, '{:06d}.tar'.format(i))
             torch.save({
                 'global_step': global_step,
@@ -799,7 +811,7 @@ def train():
             }, path)
             print('Saved checkpoints at', path)
 
-        if i%args.i_video==0 and i > 0:
+        if rank == 0 and i%args.i_video==0 and i > 0:
             # Turn on testing mode
             with torch.no_grad():
                 rgbs, disps = render_path(render_poses, hwf, K, args.chunk, render_kwargs_test)
@@ -815,7 +827,7 @@ def train():
             #     render_kwargs_test['c2w_staticcam'] = None
             #     imageio.mimwrite(moviebase + 'rgb_still.mp4', to8b(rgbs_still), fps=30, quality=8)
 
-        if i%args.i_testset==0 and i > 0:
+        if rank == 0 and i%args.i_testset==0 and i > 0:
             testsavedir = os.path.join(basedir, expname, 'testset_{:06d}'.format(i))
             os.makedirs(testsavedir, exist_ok=True)
             print('test poses shape', poses[i_test].shape)
@@ -825,7 +837,7 @@ def train():
 
 
     
-        if i%args.i_print==0:
+        if rank == 0 and i%args.i_print==0:
             tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}")
         """
             print(expname, i, psnr.numpy(), loss.numpy(), global_step.numpy())
@@ -870,9 +882,18 @@ def train():
         """
 
         global_step += 1
+    
+    if rank == 0:
+        print("training complete")
+    cleanup()
+
+def cleanup():
+    dist.destroy_process_group()
 
 
 if __name__=='__main__':
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
-
-    train()
+    os.environ["MASTER_ADDR"] = "0.0.0.0"
+    os.environ["MASTER_PORT"] = "23456"
+    mp.spawn(train, args=(world_size,), nprocs=world_size)
+    print("================ END ==================")
