@@ -18,8 +18,6 @@ from load_deepvoxels import load_dv_data
 from load_blender import load_blender_data
 from load_LINEMOD import load_LINEMOD_data
 
-import tensorflow as tf
-
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
@@ -829,7 +827,7 @@ def train():
     
         if i%args.i_print==0:
             tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}")
-        
+        """
             print(expname, i, psnr.numpy(), loss.numpy(), global_step.numpy())
             print('iter time {:.05f}'.format(dt))
 
@@ -869,7 +867,7 @@ def train():
                         tf.contrib.summary.image('rgb0', to8b(extras['rgb0'])[tf.newaxis])
                         tf.contrib.summary.image('disp0', extras['disp0'][tf.newaxis,...,tf.newaxis])
                         tf.contrib.summary.image('z_std', extras['z_std'][tf.newaxis,...,tf.newaxis])
-        
+        """
 
         global_step += 1
 
