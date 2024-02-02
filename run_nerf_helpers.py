@@ -196,11 +196,11 @@ def ndc_rays(H, W, focal, near, rays_o, rays_d):
 
 
 # Hierarchical sampling (section 5.2)
-def sample_pdf(bins, weights, N_samples, det=False, pytest=False):
+def sample_pdf(device, bins, weights, N_samples, det=False, pytest=False):
     # Get pdf
     weights = weights + 1e-5 # prevent nans
     pdf = weights / torch.sum(weights, -1, keepdim=True)
-    cdf = torch.cumsum(pdf, -1)
+    cdf = torch.cumsum(pdf, -1).to(device)
     cdf = torch.cat([torch.zeros_like(cdf[...,:1]), cdf], -1)  # (batch, len(bins))
 
     # Take uniform samples
