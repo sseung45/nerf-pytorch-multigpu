@@ -894,8 +894,8 @@ def cleanup():
 
 if __name__=='__main__':
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
-    os.environ["MASTER_ADDR"] = "10.145.83.35"
-    os.environ["MASTER_PORT"] = "9515"
+    os.environ["MASTER_ADDR"] = "0.0.0.0"
+    os.environ["MASTER_PORT"] = "77"
     world_size = torch.cuda.device_count()
     mp.spawn(train, args=(world_size,), nprocs=world_size)
     print("================ END ==================")
