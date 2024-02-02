@@ -784,6 +784,7 @@ def train(rank, world_size):
         loss.backward()
         optimizer.step()
         dist.all_reduce(loss, op=dist.ReduceOP.SUM)
+        loss /= world_size
 
         # NOTE: IMPORTANT!
         ###   update learning rate   ###
