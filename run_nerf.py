@@ -200,7 +200,7 @@ def create_nerf(device, args):
         model_fine = NeRF(D=args.netdepth_fine, W=args.netwidth_fine,
                           input_ch=input_ch, output_ch=output_ch, skips=skips,
                           input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs).to(device)
-        model_fine = DDP(model_fine, device_dis=[device])
+        model_fine = DDP(model_fine, device_ids=[device])
         grad_vars += list(model_fine.parameters())
 
     network_query_fn = lambda inputs, viewdirs, network_fn : run_network(inputs, viewdirs, network_fn,
