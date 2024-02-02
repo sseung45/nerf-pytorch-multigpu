@@ -688,7 +688,8 @@ def train(rank, world_size):
     if use_batching:
         # For random ray batching
         print('get rays')
-        rays = torch.stack([get_rays(H, W, K, p) for p in poses[:,:3,:4]], 0) # [N, ro+rd, H, W, 3]
+        poses_torch = torch.from_numpy(poses).to(device)
+        rays = torch.stack([get_rays(H, W, K, p) for p in poses_torch[:,:3,:4]], 0) # [N, ro+rd, H, W, 3]
         print('done, concats')
         rays_rgb = torch.cat([rays, images[:,None]], 1) # [N, ro+rd+rgb, H, W, 3]
         rays_rgb = torch.permute(rays_rgb, [0,2,3,1,4]) # [N, H, W, ro+rd+rgb, 3]
