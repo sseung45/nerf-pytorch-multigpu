@@ -776,12 +776,12 @@ def train(rank, world_size):
                                                 verbose=i < 10, retraw=True,
                                                 **render_kwargs_train)
 
-        optimizer.zero_grad()
+        
         img_loss = img2mse(rgb, target_s)
         trans = extras['raw'][...,-1]
         loss = img_loss
         mse2psnr = lambda x : -10. * torch.log(x) / torch.log(torch.Tensor([10.]).to(device))
-        psnr = mse2psnr(img_loss)
+        
 
         if 'rgb0' in extras:
             img_loss0 = img2mse(extras['rgb0'], target_s)
@@ -792,6 +792,8 @@ def train(rank, world_size):
         optimizer.step()
         dist.all_reduce(loss, op=dist.ReduceOp.SUM)
         loss /= world_size
+        optimizer.zero_grad()
+        psnr = mse2psnr(img_loss)
 
         # NOTE: IMPORTANT!
         ###   update learning rate   ###
