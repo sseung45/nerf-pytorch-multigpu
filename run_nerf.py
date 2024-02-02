@@ -54,12 +54,12 @@ def run_network(inputs, viewdirs, fn, embed_fn, embeddirs_fn, netchunk=1024*64):
     return outputs
 
 
-def batchify_rays(rays_flat, chunk=1024*32, **kwargs):
+def batchify_rays(device, rays_flat, chunk=1024*32, **kwargs):
     """Render rays in smaller minibatches to avoid OOM.
     """
     all_ret = {}
     for i in range(0, rays_flat.shape[0], chunk):
-        ret = render_rays(rays_flat[i:i+chunk], **kwargs)
+        ret = render_rays(device, rays_flat[i:i+chunk], **kwargs)
         for k in ret:
             if k not in all_ret:
                 all_ret[k] = []
@@ -127,8 +127,7 @@ def render(device, H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
 
     # Render and reshape
     rays.to(device)
-    print("rays rank: ", device)
-    all_ret = batchify_rays(rays, chunk, **kwargs)
+    all_ret = batchify_rays(device, rays, chunk, **kwargs)
     for k in all_ret:
         k_sh = list(sh[:-1]) + list(all_ret[k].shape[1:])
         all_ret[k] = torch.reshape(all_ret[k], k_sh)
@@ -313,7 +312,8 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
     return rgb_map, disp_map, acc_map, weights, depth_map
 
 
-def render_rays(ray_batch,
+def render_rays(device,
+                ray_batch,
                 network_fn,
                 network_query_fn,
                 N_samples,
@@ -363,6 +363,7 @@ def render_rays(ray_batch,
     near, far = bounds[...,0], bounds[...,1] # [-1,1]
 
     t_vals = torch.linspace(0., 1., steps=N_samples)
+    t_vals.to(device)
     if not lindisp:
         z_vals = near * (1.-t_vals) + far * (t_vals)
     else:
