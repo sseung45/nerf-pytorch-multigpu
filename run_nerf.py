@@ -191,7 +191,8 @@ def create_nerf(device, args):
     skips = [4]
     model = NeRF(D=args.netdepth, W=args.netwidth,
                  input_ch=input_ch, output_ch=output_ch, skips=skips,
-                 input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs).to(device)
+                 input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs)
+    model.to(device)
     model = DDP(model, device_ids=[device])
     grad_vars = list(model.parameters())
 
@@ -199,7 +200,8 @@ def create_nerf(device, args):
     if args.N_importance > 0:
         model_fine = NeRF(D=args.netdepth_fine, W=args.netwidth_fine,
                           input_ch=input_ch, output_ch=output_ch, skips=skips,
-                          input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs).to(device)
+                          input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs)
+        model_fine.to(device)
         model_fine = DDP(model_fine, device_ids=[device])
         grad_vars += list(model_fine.parameters())
 
