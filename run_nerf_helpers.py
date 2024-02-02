@@ -222,7 +222,7 @@ def sample_pdf(device, bins, weights, N_samples, det=False, pytest=False):
         u = torch.Tensor(u)
 
     # Invert CDF
-    u = u.contiguous()
+    u = u.contiguous().to(device)
     inds = torch.searchsorted(cdf, u, right=True)
     below = torch.max(torch.zeros_like(inds-1), inds-1)
     above = torch.min((cdf.shape[-1]-1) * torch.ones_like(inds), inds)
