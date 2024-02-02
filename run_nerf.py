@@ -807,7 +807,7 @@ def train(rank, world_size):
         #####           end            #####
 
         # Rest is logging
-        if i%args.i_weights==0:
+        if rank == 0 and i%args.i_weights==0:
             path = os.path.join(basedir, expname, '{:06d}.tar'.format(i))
             torch.save({
                 'global_step': global_step,
@@ -817,7 +817,7 @@ def train(rank, world_size):
             }, path)
             print('Saved checkpoints at', path)
 
-        if i%args.i_video==0 and i > 0:
+        if rank == 0 and i%args.i_video==0 and i > 0:
             # Turn on testing mode
             with torch.no_grad():
                 rgbs, disps = render_path(device, render_poses, hwf, K, args.chunk, render_kwargs_test)
@@ -833,7 +833,7 @@ def train(rank, world_size):
             #     render_kwargs_test['c2w_staticcam'] = None
             #     imageio.mimwrite(moviebase + 'rgb_still.mp4', to8b(rgbs_still), fps=30, quality=8)
 
-        if i%args.i_testset==0 and i > 0:
+        if rank == 0 and i%args.i_testset==0 and i > 0:
             testsavedir = os.path.join(basedir, expname, 'testset_{:06d}'.format(i))
             os.makedirs(testsavedir, exist_ok=True)
             print('test poses shape', poses[i_test].shape)
@@ -843,7 +843,7 @@ def train(rank, world_size):
 
 
     
-        if i%args.i_print==0:
+        if rank == 0 and i%args.i_print==0:
             tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}")
         """
             print(expname, i, psnr.numpy(), loss.numpy(), global_step.numpy())
