@@ -542,6 +542,7 @@ def train(rank, world_size):
     #torch.cuda.set_device(rank)
     #device = torch.cuda.current_device()
     device = rank
+    print("my rank: ", device)
 
     parser = config_parser()
     args = parser.parse_args()
