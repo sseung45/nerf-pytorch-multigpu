@@ -780,6 +780,7 @@ def train(rank, world_size):
         img_loss = img2mse(rgb, target_s)
         trans = extras['raw'][...,-1]
         loss = img_loss
+        mse2psnr = lambda x : -10. * torch.log(x) / torch.log(torch.Tensor([10.]).to(device))
         psnr = mse2psnr(img_loss)
 
         if 'rgb0' in extras:
