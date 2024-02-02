@@ -69,7 +69,7 @@ def batchify_rays(rays_flat, chunk=1024*32, **kwargs):
     return all_ret
 
 
-def render(H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
+def render(device, H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
                   near=0., far=1.,
                   use_viewdirs=False, c2w_staticcam=None,
                   **kwargs):
@@ -126,6 +126,7 @@ def render(H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
         rays = torch.cat([rays, viewdirs], -1)
 
     # Render and reshape
+    rays = rays.to(device)
     all_ret = batchify_rays(rays, chunk, **kwargs)
     for k in all_ret:
         k_sh = list(sh[:-1]) + list(all_ret[k].shape[1:])
@@ -137,7 +138,7 @@ def render(H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
     return ret_list + [ret_dict]
 
 
-def render_path(render_poses, hwf, K, chunk, render_kwargs, gt_imgs=None, savedir=None, render_factor=0):
+def render_path(device, render_poses, hwf, K, chunk, render_kwargs, gt_imgs=None, savedir=None, render_factor=0):
 
     H, W, focal = hwf
 
@@ -154,7 +155,7 @@ def render_path(render_poses, hwf, K, chunk, render_kwargs, gt_imgs=None, savedi
     for i, c2w in enumerate(tqdm(render_poses)):
         print(i, time.time() - t)
         t = time.time()
-        rgb, disp, acc, _ = render(H, W, K, chunk=chunk, c2w=c2w[:3,:4], **render_kwargs)
+        rgb, disp, acc, _ = render(device, H, W, K, chunk=chunk, c2w=c2w[:3,:4], **render_kwargs)
         rgbs.append(rgb.cpu().numpy())
         disps.append(disp.cpu().numpy())
         if i==0:
@@ -676,7 +677,7 @@ def train(rank, world_size):
             os.makedirs(testsavedir, exist_ok=True)
             print('test poses shape', render_poses.shape)
 
-            rgbs, _ = render_path(render_poses, hwf, K, args.chunk, render_kwargs_test, gt_imgs=images, savedir=testsavedir, render_factor=args.render_factor)
+            rgbs, _ = render_path(device, render_poses, hwf, K, args.chunk, render_kwargs_test, gt_imgs=images, savedir=testsavedir, render_factor=args.render_factor)
             print('Done rendering', testsavedir)
             imageio.mimwrite(os.path.join(testsavedir, 'video.mp4'), to8b(rgbs), fps=30, quality=8)
 
@@ -768,7 +769,7 @@ def train(rank, world_size):
                 target_s = target[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
 
         #####  Core optimization loop  #####
-        rgb, disp, acc, extras = render(H, W, K, chunk=args.chunk, rays=batch_rays,
+        rgb, disp, acc, extras = render(device, H, W, K, chunk=args.chunk, rays=batch_rays,
                                                 verbose=i < 10, retraw=True,
                                                 **render_kwargs_train)
 
@@ -815,7 +816,7 @@ def train(rank, world_size):
         if rank == 0 and i%args.i_video==0 and i > 0:
             # Turn on testing mode
             with torch.no_grad():
-                rgbs, disps = render_path(render_poses, hwf, K, args.chunk, render_kwargs_test)
+                rgbs, disps = render_path(device, render_poses, hwf, K, args.chunk, render_kwargs_test)
             print('Done, saving', rgbs.shape, disps.shape)
             moviebase = os.path.join(basedir, expname, '{}_spiral_{:06d}_'.format(expname, i))
             imageio.mimwrite(moviebase + 'rgb.mp4', to8b(rgbs), fps=30, quality=8)
@@ -833,7 +834,7 @@ def train(rank, world_size):
             os.makedirs(testsavedir, exist_ok=True)
             print('test poses shape', poses[i_test].shape)
             with torch.no_grad():
-                render_path(torch.Tensor(poses[i_test]).to(device), hwf, K, args.chunk, render_kwargs_test, gt_imgs=images[i_test], savedir=testsavedir)
+                render_path(device, torch.Tensor(poses[i_test]).to(device), hwf, K, args.chunk, render_kwargs_test, gt_imgs=images[i_test], savedir=testsavedir)
             print('Saved test set')
 
 
