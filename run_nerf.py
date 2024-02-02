@@ -23,12 +23,6 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-dist.init_process_group("nccl")
-rank = dist.get_rank()
-torch.cuda.set_device(rank)
-device = torch.cuda.current_device()
-world_size = dist.get_world_size()
-
 np.random.seed(0)
 DEBUG = False
 
@@ -543,6 +537,10 @@ def config_parser():
 
 
 def train(rank, world_size):
+    dist.init_process_group(backend='nccl', init_method='env://', world_size=world_size, rank=rank)
+    torch.cuda.set_device(rank)
+    device = torch.cuda.current_device()
+
 
     parser = config_parser()
     args = parser.parse_args()
