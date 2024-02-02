@@ -218,6 +218,7 @@ def create_nerf(device, args):
     ##########################
 
     # Load checkpoints
+    '''
     if args.ft_path is not None and args.ft_path!='None':
         ckpts = [args.ft_path]
     else:
@@ -233,10 +234,10 @@ def create_nerf(device, args):
         optimizer.load_state_dict(ckpt['optimizer_state_dict'])
 
         # Load model
-        #model.load_state_dict(ckpt['network_fn_state_dict'])
-        #if model_fine is not None:
-        #    model_fine.load_state_dict(ckpt['network_fine_state_dict'])
-
+        model.load_state_dict(ckpt['network_fn_state_dict'])
+        if model_fine is not None:
+            model_fine.load_state_dict(ckpt['network_fine_state_dict'])
+'''
     ##########################
 
     render_kwargs_train = {
