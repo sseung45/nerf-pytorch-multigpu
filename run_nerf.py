@@ -539,7 +539,7 @@ def config_parser():
 
 def train(rank, world_size):
     dist.init_process_group(backend='nccl', init_method='env://', world_size=world_size, rank=rank)
-    torch.cuda.set_device(rank)
+    #torch.cuda.set_device(rank)
     #device = torch.cuda.current_device()
     device = rank
     print("my rank: ", device)
@@ -894,8 +894,8 @@ def cleanup():
 
 if __name__=='__main__':
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
-    os.environ["MASTER_ADDR"] = "0.0.0.0"
-    os.environ["MASTER_PORT"] = "23456"
+    os.environ["MASTER_ADDR"] = "10.145.83.35"
+    os.environ["MASTER_PORT"] = "9515"
     world_size = torch.cuda.device_count()
     mp.spawn(train, args=(world_size,), nprocs=world_size)
     print("================ END ==================")
