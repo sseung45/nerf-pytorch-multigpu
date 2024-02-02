@@ -69,7 +69,7 @@ def batchify_rays(rays_flat, chunk=1024*32, **kwargs):
     return all_ret
 
 
-def render(rank, H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
+def render(H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
                   near=0., far=1.,
                   use_viewdirs=False, c2w_staticcam=None,
                   **kwargs):
@@ -124,7 +124,6 @@ def render(rank, H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
     rays = torch.cat([rays_o, rays_d, near, far], -1)
     if use_viewdirs:
         rays = torch.cat([rays, viewdirs], -1)
-    rays = rays.to(rank)
 
     # Render and reshape
     all_ret = batchify_rays(rays, chunk, **kwargs)
@@ -767,7 +766,7 @@ def train(rank, world_size):
                 target_s = target[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
 
         #####  Core optimization loop  #####
-        rgb, disp, acc, extras = render(rank, H, W, K, chunk=args.chunk, rays=batch_rays,
+        rgb, disp, acc, extras = render(H, W, K, chunk=args.chunk, rays=batch_rays,
                                                 verbose=i < 10, retraw=True,
                                                 **render_kwargs_train)
 
