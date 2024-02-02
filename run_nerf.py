@@ -691,9 +691,9 @@ def train(rank, world_size):
         poses = torch.Tensor(poses).to(device)
         rays = torch.stack([torch.stack(get_rays(H, W, K, p, device), 0) for p in poses[:,:3,:4]], 0) # [N, ro+rd, H, W, 3]
         print('done, concats')
+        rays = torch.stack([rays[i] for i in i_train], 0) # train images only
         rays_rgb = torch.cat([rays, images[:,None]], 1) # [N, ro+rd+rgb, H, W, 3]
         rays_rgb = torch.permute(rays_rgb, [0,2,3,1,4]) # [N, H, W, ro+rd+rgb, 3]
-        rays_rgb = torch.stack([rays_rgb[i] for i in i_train], 0) # train images only
         rays_rgb = rays_rgb.reshape(rays_rgb, [-1,3,3]) # [(N-1)*H*W, ro+rd+rgb, 3]
         rays_rgb = rays_rgb.type(torch.float32)
         print('shuffle rays')
