@@ -764,7 +764,7 @@ def train(rank, world_size):
                 select_coords = coords[select_inds].long()  # (N_rand, 2)
                 rays_o = rays_o[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
                 rays_d = rays_d[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
-                batch_rays = torch.stack([rays_o, rays_d], 0)
+                batch_rays = torch.stack([rays_o, rays_d], 0).to(device)
                 target_s = target[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
 
         #####  Core optimization loop  #####
@@ -897,5 +897,5 @@ if __name__=='__main__':
     os.environ["MASTER_ADDR"] = "0.0.0.0"
     os.environ["MASTER_PORT"] = "23456"
     world_size = torch.cuda.device_count()
-    mp.spawn(train, args=(world_size,), nprocs=world_size)
+    mp.spawn(train, args=(world_size), nprocs=world_size)
     print("================ END ==================")
