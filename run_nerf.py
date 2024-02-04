@@ -544,7 +544,11 @@ def train(rank, world_size):
     dist.init_process_group(backend='nccl', init_method='env://', world_size=world_size, rank=rank)
     #torch.cuda.set_device(rank)
     #device = torch.cuda.current_device()
-    device = rank
+    if torch.cuda.is_available():
+        device = rank
+    else:
+        device = "cpu"
+    
     print("my rank: ", device)
 
     parser = config_parser()
