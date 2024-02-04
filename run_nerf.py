@@ -97,7 +97,7 @@ def render(device, H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
     """
     if c2w is not None:
         # special case to render full image
-        rays_o, rays_d = get_rays(H, W, K, c2w)
+        rays_o, rays_d = get_rays(H, W, K, c2w, device)
     else:
         # use provided ray batch
         rays_o, rays_d = rays
@@ -126,7 +126,6 @@ def render(device, H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
         rays = torch.cat([rays, viewdirs], -1)
 
     # Render and reshape
-    rays.to(device)
     all_ret = batchify_rays(device, rays, chunk, **kwargs)
     for k in all_ret:
         k_sh = list(sh[:-1]) + list(all_ret[k].shape[1:])
