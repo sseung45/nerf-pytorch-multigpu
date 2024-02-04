@@ -139,7 +139,6 @@ def render(device, H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
 
 def render_path(device, render_poses, hwf, K, chunk, render_kwargs, gt_imgs=None, savedir=None, render_factor=0):
 
-    render_poses = render_poses.to(device)
     H, W, focal = hwf
 
     if render_factor!=0:
@@ -838,7 +837,7 @@ def train(rank, world_size):
             os.makedirs(testsavedir, exist_ok=True)
             print('test poses shape', poses[i_test].shape)
             with torch.no_grad():
-                render_path(device, torch.Tensor(poses[i_test]).to("cpu"), hwf, K, args.chunk, render_kwargs_test, gt_imgs=images[i_test], savedir=testsavedir)
+                render_path(device, torch.Tensor(poses[i_test]).to(device), hwf, K, args.chunk, render_kwargs_test, gt_imgs=images[i_test], savedir=testsavedir)
             print('Saved test set')
 
 
