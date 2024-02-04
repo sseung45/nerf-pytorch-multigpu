@@ -139,6 +139,7 @@ def render(device, H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
 
 def render_path(device, render_poses, hwf, K, chunk, render_kwargs, gt_imgs=None, savedir=None, render_factor=0):
 
+    render_poses = render_poses.to(device)
     H, W, focal = hwf
 
     if render_factor!=0:
@@ -544,11 +545,7 @@ def train(rank, world_size):
     dist.init_process_group(backend='nccl', init_method='env://', world_size=world_size, rank=rank)
     #torch.cuda.set_device(rank)
     #device = torch.cuda.current_device()
-    if torch.cuda.is_available():
-        device = rank
-    else:
-        device = "cpu"
-    
+    device = rank
     print("my rank: ", device)
 
     parser = config_parser()
@@ -841,7 +838,7 @@ def train(rank, world_size):
             os.makedirs(testsavedir, exist_ok=True)
             print('test poses shape', poses[i_test].shape)
             with torch.no_grad():
-                render_path(device, torch.Tensor(poses[i_test]).to(device), hwf, K, args.chunk, render_kwargs_test, gt_imgs=images[i_test], savedir=testsavedir)
+                render_path(device, torch.Tensor(poses[i_test]), hwf, K, args.chunk, render_kwargs_test, gt_imgs=images[i_test], savedir=testsavedir)
             print('Saved test set')
 
 
