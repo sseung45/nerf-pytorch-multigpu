@@ -687,6 +687,8 @@ def train(rank, world_size):
 
     # Prepare raybatch tensor if batching random rays
     N_rand = args.N_rand
+    if world_size > 1:
+        N_rand /= world_size
     use_batching = not args.no_batching
     if use_batching:
         # For random ray batching
