@@ -703,7 +703,7 @@ def train(rank, world_size):
         #    rays_rgb, _ = np.split(rays_rgb, 2)
         #else:
         #    _, rays_rgb = np.split(rays_rgb, 2)
-        rays_rgb = np.split(rays_rgb, 2)
+        rays_rgb, _ = np.split(rays_rgb, 2)
         print("length: ", len(rays_rgb))
         print('shuffle rays')
         np.random.shuffle(rays_rgb)
