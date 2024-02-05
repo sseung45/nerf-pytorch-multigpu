@@ -98,6 +98,12 @@ def render(device, H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
     if c2w is not None:
         # special case to render full image
         rays_o, rays_d = get_rays(H, W, K, c2w, device)
+        if device == 0:
+            rays_o, _ = np.split(rays_o, 2)
+            rays_d, _ = np.split(rays_o, 2)
+        else:
+            _, rays_o = np.split(rays_o, 2)
+            _, rays_d = np.split(rays_d, 2)
     else:
         # use provided ray batch
         rays_o, rays_d = rays
@@ -699,13 +705,10 @@ def train(rank, world_size):
         rays_rgb = np.reshape(rays_rgb, [-1,3,3]) # [(N-1)*H*W, ro+rd+rgb, 3]
         rays_rgb = rays_rgb.astype(np.float32)
         ## ray rank따라 분배
-        print("origin len: ", len(rays_rgb))
         if rank == 0:
             rays_rgb, _ = np.split(rays_rgb, 2)
-            print("rank 0 len: ", len(rays_rgb))
         else:
             _, rays_rgb = np.split(rays_rgb, 2)
-            print("rank 1 len: ", len(rays_rgb))
         print('shuffle rays')
         np.random.shuffle(rays_rgb)
 
