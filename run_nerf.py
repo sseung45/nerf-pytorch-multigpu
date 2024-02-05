@@ -786,7 +786,7 @@ def train(rank, world_size):
         #trans = extras['raw'][...,-1]
         #loss = img_loss
 
-        loss = torch.nn.functional.mse_loss(rgb, target_s)
+        loss = torch.nn.functional.mse_loss(rgb, target_s).cuda(device)
         img_loss = loss
 
         mse2psnr = lambda x : -10. * torch.log(x) / torch.log(torch.Tensor([10.]).to(device))
