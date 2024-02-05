@@ -701,8 +701,10 @@ def train(rank, world_size):
         ## ray rank따라 분배
         if rank == 0:
             rays_rgb, _ = np.split(rays_rgb, 2)
+            print(rank, " ============ ", rays_rgb)
         else:
             _, rays_rgb = np.split(rays_rgb, 2)
+            print(rank, " ++++++++++++ ", rays_rgb)
         print('shuffle rays')
         np.random.shuffle(rays_rgb)
 
