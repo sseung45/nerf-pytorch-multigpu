@@ -703,7 +703,6 @@ def train(rank, world_size):
         #    rays_rgb, _ = np.split(rays_rgb, 2)
         #else:
         #    _, rays_rgb = np.split(rays_rgb, 2)
-        rays_rgb, aa, bb, cc = np.split(rays_rgb, 4)
         print("length: ", len(rays_rgb))
         print('shuffle rays')
         np.random.shuffle(rays_rgb)
@@ -796,8 +795,8 @@ def train(rank, world_size):
 
         loss.backward()
         optimizer.step()
-        dist.all_reduce(loss, op=dist.ReduceOp.SUM)
-        loss /= world_size
+        #dist.all_reduce(loss, op=dist.ReduceOp.SUM)
+        #loss /= world_size
 
         # NOTE: IMPORTANT!
         ###   update learning rate   ###
