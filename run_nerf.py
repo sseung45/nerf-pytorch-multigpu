@@ -782,9 +782,13 @@ def train(rank, world_size):
                                                 **render_kwargs_train)
 
         optimizer.zero_grad()
-        img_loss = img2mse(rgb, target_s)
-        trans = extras['raw'][...,-1]
-        loss = img_loss
+        #img_loss = img2mse(rgb, target_s)
+        #trans = extras['raw'][...,-1]
+        #loss = img_loss
+
+        loss = torch.nn.functional.mse_loss(rgb, target_s)
+        img_loss = loss
+
         mse2psnr = lambda x : -10. * torch.log(x) / torch.log(torch.Tensor([10.]).to(device))
         psnr = mse2psnr(img_loss)
 
