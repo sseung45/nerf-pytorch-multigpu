@@ -98,12 +98,16 @@ def render(device, H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
     if c2w is not None:
         # special case to render full image
         rays_o, rays_d = get_rays(H, W, K, c2w, device)
+        print("origin rays_o: ", len(rays_o))
+        print("origin rays_d: ", len(rays_d))
         if device == 0:
             rays_o, _ = np.split(rays_o, 2)
             rays_d, _ = np.split(rays_d, 2)
         else:
             _, rays_o = np.split(rays_o, 2)
             _, rays_d = np.split(rays_d, 2)
+        print("rank", device, "rays_o: ", len(rays_o))
+        print("rank", device, "rays_d: ", len(rays_d))
     else:
         # use provided ray batch
         rays_o, rays_d = rays
