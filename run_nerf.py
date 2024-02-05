@@ -901,5 +901,5 @@ if __name__=='__main__':
     os.environ["MASTER_ADDR"] = "0.0.0.0"
     os.environ["MASTER_PORT"] = "23456"
     world_size = torch.cuda.device_count()
-    mp.spawn(train, args=(world_size,), nprocs=world_size)
+    mp.spawn(train, args=(world_size,), nprocs=world_size, join=True)
     print("================ END ==================")
