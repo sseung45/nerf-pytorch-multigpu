@@ -699,10 +699,10 @@ def train(rank, world_size):
         rays_rgb = np.reshape(rays_rgb, [-1,3,3]) # [(N-1)*H*W, ro+rd+rgb, 3]
         rays_rgb = rays_rgb.astype(np.float32)
         ## ray rank따라 분배
-        #if rank == 0:
-        #    rays_rgb, _ = np.split(rays_rgb, 2)
-        #else:
-        #    _, rays_rgb = np.split(rays_rgb, 2)
+        if rank == 0:
+            rays_rgb, _ = np.split(rays_rgb, 2)
+        else:
+            _, rays_rgb = np.split(rays_rgb, 2)
         print("length: ", len(rays_rgb))
         print('shuffle rays')
         np.random.shuffle(rays_rgb)
