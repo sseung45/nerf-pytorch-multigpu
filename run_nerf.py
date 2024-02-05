@@ -704,11 +704,9 @@ def train(rank, world_size):
         if world_size > 1:
             rays_rgb = np.split(rays_rgb, world_size)
         for i, rays_ in enumerate(rays_rgb):
-            print(i, "---------------")
             if i == rank:
                 rays_rgb = rays_
-        
-        print("length: ", len(rays_rgb))
+        print(rank, " rays length: ", len(rays_rgb))
         print('shuffle rays')
         np.random.shuffle(rays_rgb)
 
