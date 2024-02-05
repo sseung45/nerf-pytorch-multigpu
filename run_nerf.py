@@ -698,6 +698,8 @@ def train(rank, world_size):
         rays_rgb = np.stack([rays_rgb[i] for i in i_train], 0) # train images only
         rays_rgb = np.reshape(rays_rgb, [-1,3,3]) # [(N-1)*H*W, ro+rd+rgb, 3]
         rays_rgb = rays_rgb.astype(np.float32)
+        ## ray rank따라 분배
+        print(rays_rgb)
         print('shuffle rays')
         np.random.shuffle(rays_rgb)
 
