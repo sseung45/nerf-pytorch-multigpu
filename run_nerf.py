@@ -888,8 +888,7 @@ def train(rank, world_size):
 
         global_step += 1
     
-    if rank == 0:
-        print("training complete")
+    print("training complete ", rank)
     cleanup()
     return True
 
