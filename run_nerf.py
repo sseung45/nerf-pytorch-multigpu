@@ -687,6 +687,7 @@ def train(rank, world_size):
 
     # Prepare raybatch tensor if batching random rays
     N_rand = args.N_rand
+    ## set batch size (multi-gpu)
     if world_size > 1:
         N_rand = int(N_rand / world_size)
     use_batching = not args.no_batching
@@ -700,7 +701,7 @@ def train(rank, world_size):
         rays_rgb = np.stack([rays_rgb[i] for i in i_train], 0) # train images only
         rays_rgb = np.reshape(rays_rgb, [-1,3,3]) # [(N-1)*H*W, ro+rd+rgb, 3]
         rays_rgb = rays_rgb.astype(np.float32)
-        ## ray rank따라 분배
+        ## split rays by rank (multi-gpu)
         if world_size > 1:
             rays_rgb = np.split(rays_rgb, world_size)
         for i, rays_ in enumerate(rays_rgb):
