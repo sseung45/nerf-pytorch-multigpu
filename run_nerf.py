@@ -848,7 +848,8 @@ def train(rank, world_size):
 
 
     
-        if rank == 0 and i%args.i_print==0:
+        if i%args.i_print==0:
+            print("rank: ", rank)
             tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}")
         """
             print(expname, i, psnr.numpy(), loss.numpy(), global_step.numpy())
