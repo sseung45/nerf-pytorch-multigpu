@@ -891,6 +891,7 @@ def train(rank, world_size):
     if rank == 0:
         print("training complete")
     cleanup()
+    return True
 
 def cleanup():
     dist.destroy_process_group()
