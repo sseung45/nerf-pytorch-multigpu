@@ -21,11 +21,32 @@ from load_LINEMOD import load_LINEMOD_data
 import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
+import cv2
+from skimage.metrics import structural_similarity as ssim
+from lpips import LPIPS
 
 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
 DEBUG = False
+loss_fn = LPIPS(net='vgg')
 
+
+def cal_psnr(img1, img2):
+    mse = np.mean((img1 - img2) ** 2)
+    if mse == 0:
+        return float('inf')
+    max_pixel = 255.0
+    return 20 * np.log10(max_pixel / np.sqrt(mse))
+
+def cal_ssim(img1, img2):
+    gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+    gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+    return ssim(gray1, gray2)
+
+def cal_lpips(img1, img2):
+    img1_tensor = torch.tensor(img1).unsqueeze(0).permute(0, 3, 1, 2).float() / 255.0
+    img2_tensor = torch.tensor(img2).unsqueeze(0).permute(0, 3, 1, 2).float() / 255.0
+    return loss_fn(img1_tensor, img2_tensor).item()
 
 def batchify(fn, chunk):
     """Constructs a version of 'fn' that applies to smaller batches.
@@ -536,6 +557,10 @@ def config_parser():
                         help='frequency of testset saving')
     parser.add_argument("--i_video",   type=int, default=50000, 
                         help='frequency of render_poses video saving')
+    
+    # evaluation
+    parser.add_argument("--eval_test", action='store_true', 
+                        help='evaluate test set per i_testset iteration')
 
     return parser
 
@@ -549,6 +574,7 @@ def train(rank, world_size):
 
     parser = config_parser()
     args = parser.parse_args()
+    mse2psnr = lambda x : -10. * torch.log(x) / torch.log(torch.Tensor([10.]).to(device))
 
     # Load data
     K = None
@@ -789,7 +815,6 @@ def train(rank, world_size):
         img_loss = img2mse(rgb, target_s)
         trans = extras['raw'][...,-1]
         loss = img_loss
-        mse2psnr = lambda x : -10. * torch.log(x) / torch.log(torch.Tensor([10.]).to(device))
         psnr = mse2psnr(img_loss)
 
         if 'rgb0' in extras:
@@ -850,9 +875,26 @@ def train(rank, world_size):
                 render_path(device, poses[i_test], hwf, K, args.chunk, render_kwargs_test, gt_imgs=images[i_test], savedir=testsavedir)
             print('Saved test set')
 
+            # Evaluate test set
+            if args.eval_test:
+                print('Evaluation test set')
+                gt_image = images[i_test]
+                psnr_test = 0.0
+                ssim_test = 0.0
+                lpips_test = 0.0
+                for i in i_test:
+                    test_image = os.path.join(testsavedir, '{:03d}.png'.format(i))
+                    psnr_test += float(cal_psnr(gt_image[i], test_image))
+                    ssim_test += float(cal_ssim(gt_image[i], test_image))
+                    lpips_test += float(cal_lpips(gt_image[i], test_image))
+                len_test = len(i_test)
+                psnr_test /= len_test
+                ssim_test /= len_test
+                lpips_test /= len_test
+                tqdm.write(f"[TEST] PSNR: {psnr_test.item()}  SSIM: {ssim_test.item()}  LPIPS: {lpips_test.item()}")
 
     
-        if i%args.i_print==0:
+        if rank == 0 and i%args.i_print==0:
             print("rank: ", rank)
             tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}")
         """
