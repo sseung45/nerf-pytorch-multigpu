@@ -888,7 +888,9 @@ def train(rank, world_size):
                 for i in i_test:
                     test_image = os.path.join(testsavedir, '{:03d}.png'.format(i))
                     gt = os.path.join(testsavedir, 'gt_{:03d}.png'.format(i))
-                    cv2.imwrite(gt, gt_image[i])
+                    print(gt)
+                    print(gt_image[i])
+                    imageio.imwrite(gt, gt_image[i])
                     psnr_test += float(cal_psnr(gt, test_image))
                     ssim_test += float(cal_ssim(gt, test_image))
                     lpips_test += float(cal_lpips(gt, test_image))
