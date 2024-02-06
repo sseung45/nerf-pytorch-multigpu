@@ -884,7 +884,7 @@ def train(rank, world_size):
                 psnr_test = 0.0
                 ssim_test = 0.0
                 lpips_test = 0.0
-                for i in i_test:
+                for i, _ in enumerate(i_test):
                     print("i:  ",i)
                     test_image = os.path.join(testsavedir, '{:03d}.png'.format(i))
                     psnr_test += cal_psnr(gt_image[i], test_image)
