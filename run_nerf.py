@@ -25,6 +25,7 @@ import cv2
 from torch.autograd import Variable
 from math import exp
 from lpipsPyTorch import lpips
+import wandb
 
 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
@@ -591,6 +592,9 @@ def config_parser():
     parser.add_argument("--eval_test", action='store_true', 
                         help='evaluate test set per i_testset iteration')
 
+    # wandb
+    parser.add_argument("--wandb", action='store_true', 
+                        help='report in wandb')
     return parser
 
 
@@ -604,6 +608,12 @@ def train(rank, world_size):
     parser = config_parser()
     args = parser.parse_args()
     mse2psnr = lambda x : -10. * torch.log(x) / torch.log(torch.Tensor([10.]).to(device))
+
+    # Start wandb
+    if args.wandb and rank == 0:
+        wandb.init(project="nerf-multigpu")
+        wandb.run.name = args.expname
+        wandb.run.save()
 
     # Load data
     K = None
@@ -870,7 +880,7 @@ def train(rank, world_size):
         #####           end            #####
 
         # Rest is logging
-        if rank == 0 and i%args.i_weights==0:
+        if i%args.i_weights==0 and rank == 0:
             path = os.path.join(basedir, expname, '{:06d}.tar'.format(i))
             torch.save({
                 'global_step': global_step,
@@ -880,7 +890,7 @@ def train(rank, world_size):
             }, path)
             print('Saved checkpoints at', path)
 
-        if rank == 0 and i%args.i_video==0 and i > 0:
+        if i%args.i_video==0 and i > 0 and rank == 0:
             # Turn on testing mode
             with torch.no_grad():
                 rgbs, disps = render_path(device, render_poses, hwf, K, args.chunk, render_kwargs_test)
@@ -896,7 +906,7 @@ def train(rank, world_size):
             #     render_kwargs_test['c2w_staticcam'] = None
             #     imageio.mimwrite(moviebase + 'rgb_still.mp4', to8b(rgbs_still), fps=30, quality=8)
 
-        if rank == 0 and i%args.i_testset==0 and i > 0:
+        if i%args.i_testset==0 and i > 0 and rank == 0:
             
             testsavedir = os.path.join(basedir, expname, 'testset_{:06d}'.format(i))
             os.makedirs(testsavedir, exist_ok=True)
@@ -906,76 +916,37 @@ def train(rank, world_size):
                 render_path(device, poses[i_test], hwf, K, args.chunk, render_kwargs_test, gt_imgs=images[i_test], savedir=testsavedir)
             print('Saved test set')'''
 
-            # Evaluate test set
-            if args.eval_test:
-                print('Evaluation test set')
-                psnr_test = 0.0
-                ssim_test = 0.0
-                lpips_test = 0.0
-                for idx in i_test:
-                    target = images[idx]
-                    pose = poses[idx, :3,:4]
-                    with torch.no_grad():
-                        rgb, disp, acc, extras = render(device, H, W, K, chunk=args.chunk, c2w=pose,
-                                                        **render_kwargs_test)
-                    psnr_test += mse2psnr(img2mse(rgb, target))
-                    ssim_test += ssim(target, rgb)
-                    lpips_test += lpips(target.to(device).permute(2,0,1), rgb.to(device).permute(2,0,1), net_type='vgg')
+        # Evaluate test set
+        if i%args.i_testset==0 and i > 0 and rank == 0:
+            print('Evaluation test set')
+            psnr_test = 0.0
+            ssim_test = 0.0
+            lpips_test = 0.0
+            for idx in i_test:
+                target = images[idx]
+                pose = poses[idx, :3,:4]
+                with torch.no_grad():
+                    rgb, disp, acc, extras = render(device, H, W, K, chunk=args.chunk, c2w=pose,
+                                                    **render_kwargs_test)
+                psnr_test += mse2psnr(img2mse(rgb, target))
+                ssim_test += ssim(target, rgb)
+                lpips_test += lpips(target.to(device).permute(2,0,1), rgb.to(device).permute(2,0,1), net_type='vgg')
                 
-                len_test = len(i_val)
-                psnr_test /= len_test
-                ssim_test /= len_test
-                lpips_test /= len_test
-                tqdm.write(f"[TEST] PSNR: {psnr_test.item()}  SSIM: {ssim_test.item()}  LPIPS: {lpips_test.item()}")
-
+            len_test = len(i_val)
+            psnr_test /= len_test
+            ssim_test /= len_test
+            lpips_test /= len_test
+            tqdm.write(f"[TEST] PSNR: {psnr_test.item()}  SSIM: {ssim_test.item()}  LPIPS: {lpips_test.item()}")
+            if args.wandb:
+                wandb.log({"PSNR": psnr_test, "SSIM": ssim_test, "LPIPS": lpips_test}, step=i)
     
-        if rank == 0 and i%args.i_print==0:
+        if i%args.i_print==0 and rank == 0:
             print("rank: ", rank)
             tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}")
-        """
-            print(expname, i, psnr.numpy(), loss.numpy(), global_step.numpy())
-            print('iter time {:.05f}'.format(dt))
-
-            with tf.contrib.summary.record_summaries_every_n_global_steps(args.i_print):
-                tf.contrib.summary.scalar('loss', loss)
-                tf.contrib.summary.scalar('psnr', psnr)
-                tf.contrib.summary.histogram('tran', trans)
-                if args.N_importance > 0:
-                    tf.contrib.summary.scalar('psnr0', psnr0)
-
-
-            if i%args.i_img==0:
-
-                # Log a rendered validation view to Tensorboard
-                img_i=np.random.choice(i_val)
-                target = images[img_i]
-                pose = poses[img_i, :3,:4]
-                with torch.no_grad():
-                    rgb, disp, acc, extras = render(H, W, focal, chunk=args.chunk, c2w=pose,
-                                                        **render_kwargs_test)
-
-                psnr = mse2psnr(img2mse(rgb, target))
-
-                with tf.contrib.summary.record_summaries_every_n_global_steps(args.i_img):
-
-                    tf.contrib.summary.image('rgb', to8b(rgb)[tf.newaxis])
-                    tf.contrib.summary.image('disp', disp[tf.newaxis,...,tf.newaxis])
-                    tf.contrib.summary.image('acc', acc[tf.newaxis,...,tf.newaxis])
-
-                    tf.contrib.summary.scalar('psnr_holdout', psnr)
-                    tf.contrib.summary.image('rgb_holdout', target[tf.newaxis])
-
-
-                if args.N_importance > 0:
-
-                    with tf.contrib.summary.record_summaries_every_n_global_steps(args.i_img):
-                        tf.contrib.summary.image('rgb0', to8b(extras['rgb0'])[tf.newaxis])
-                        tf.contrib.summary.image('disp0', extras['disp0'][tf.newaxis,...,tf.newaxis])
-                        tf.contrib.summary.image('z_std', extras['z_std'][tf.newaxis,...,tf.newaxis])
-        """
-
         global_step += 1
     
+    if args.wandb and rank == 0:
+        wandb.finish()
     print("training complete ", rank)
     cleanup()
 
