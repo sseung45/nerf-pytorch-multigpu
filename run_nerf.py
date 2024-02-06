@@ -22,9 +22,9 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 import cv2
-from lpips import LPIPS
 from torch.autograd import Variable
 from math import exp
+from lpipsPyTorch import lpips
 
 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
@@ -604,7 +604,6 @@ def train(rank, world_size):
     parser = config_parser()
     args = parser.parse_args()
     mse2psnr = lambda x : -10. * torch.log(x) / torch.log(torch.Tensor([10.]).to(device))
-    loss_fn = LPIPS(net='vgg')
 
     # Load data
     K = None
@@ -921,7 +920,7 @@ def train(rank, world_size):
                                                         **render_kwargs_test)
                     psnr_test += mse2psnr(img2mse(rgb, target))
                     ssim_test += ssim(target, rgb)
-                    lpips_test += loss_fn(target.permute(2,0,1).to(device), rgb.permute(2,0,1).to(device))
+                    lpips_test += lpips(target, rgb, net_type='vgg')
                 
                 len_test = len(i_val)
                 psnr_test /= len_test
