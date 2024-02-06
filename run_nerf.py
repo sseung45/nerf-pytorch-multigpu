@@ -871,11 +871,11 @@ def train(rank, world_size):
             
             testsavedir = os.path.join(basedir, expname, 'testset_{:06d}'.format(i))
             os.makedirs(testsavedir, exist_ok=True)
-            '''
+            
             print('test poses shape', poses[i_test].shape)
             with torch.no_grad():
                 render_path(device, poses[i_test], hwf, K, args.chunk, render_kwargs_test, gt_imgs=images[i_test], savedir=testsavedir)
-            print('Saved test set')'''
+            print('Saved test set')
 
             # Evaluate test set
             if args.eval_test:
