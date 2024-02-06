@@ -883,9 +883,9 @@ def train(rank, world_size):
                 psnr_test = 0.0
                 ssim_test = 0.0
                 lpips_test = 0.0
-                for img_i in i_test:
-                    target = images[img_i]
-                    pose = poses[img_i, :3,:4]
+                for idx in i_test:
+                    target = images[idx]
+                    pose = poses[idx, :3,:4]
                     with torch.no_grad():
                         rgb, disp, acc, extras = render(device, H, W, K, chunk=args.chunk, c2w=pose,
                                                         **render_kwargs_test)
