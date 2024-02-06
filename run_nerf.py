@@ -46,9 +46,8 @@ def cal_psnr(gt_tensor, image_path):
 def cal_ssim(gt_tensor, image_path):
     image = cv2.imread(image_path)
     gt_image = gt_tensor.cpu().numpy()
-    gray_gt_image = cv2.cvtColor(gt_image, cv2.COLOR_RGB2GRAY)
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    ssim_value = ssim(gray_gt_image, gray_image)
+    data_range = 1 if image.dtype == torch.float32 else 255
+    ssim_value = ssim(gt_image, image, data_range=data_range, multichannel=True)
     return ssim_value
 
 
