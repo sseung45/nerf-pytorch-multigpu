@@ -33,12 +33,13 @@ loss_fn = LPIPS(net='vgg')
 
 def cal_psnr(gt_tensor, image_path):
     gt = np.array(gt_tensor.to('cpu'))
-    image = cv2.imread(image_path)
-    image = image / 255.
-    print('======================', image.dtype)
-    print('++++++++++++++++++++++', gt.dtype)
-    psnr = cv2.PSNR(gt, image)
-    print(psnr)
+    gt = gt * 255.
+    image = float(cv2.imread(image_path))
+    mse = np.mean((gt - image) ** 2)
+    
+    # Calculate PSNR
+    psnr = 20 * np.log10(255.0 / np.sqrt(mse))
+    print("psnr: =======================", psnr)
     return 0
 
 def cal_ssim(gt_tensor, image_path):
@@ -882,8 +883,6 @@ def train(rank, world_size):
             if args.eval_test:
                 print('Evaluation test set')
                 gt_image = images[i_test]
-                print(gt_image.shape)
-                print(gt_image)
                 psnr_test = 0.0
                 ssim_test = 0.0
                 lpips_test = 0.0
