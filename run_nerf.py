@@ -33,33 +33,16 @@ loss_fn = LPIPS(net='vgg')
 
 def cal_psnr(gt_tensor, image_path):
     image = cv2.imread(image_path)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image_tensor = torch.tensor(image)
-    gt_image = gt_tensor.cpu().numpy()
-    mse = np.mean((gt_image - image_tensor.numpy()) ** 2)
-    if mse == 0:
-        return float('inf')
-    max_pixel = 255.0
-    return 20 * np.log10(max_pixel / np.sqrt(mse))
-
+    psnr = cv2.PSNR(gt_tensor, image)
+    print(psnr)
+    return psnr
 
 def cal_ssim(gt_tensor, image_path):
-    image = cv2.imread(image_path)
-    gt_image = gt_tensor.cpu().numpy()
-    data_range = 1 if image.dtype == torch.float32 else 255
-    image_tensor = torch.tensor(image.transpose(2, 0, 1))
-    win_size = min(image_tensor.shape[1], image_tensor.shape[2])
-    win_size = min(win_size, 7)
-    ssim_value = ssim(gt_image, image, data_range=data_range, multichannel=True, win_size=win_size)
-    return ssim_value
+    return 0
 
 
 def cal_lpips(gt_tensor, image_path):
-    image = cv2.imread(image_path)
-    image_tensor = torch.tensor(image).unsqueeze(0).float() / 255.0
-    gt_tensor = gt_tensor.unsqueeze(0).float() / 255.0
-    lpips_value = loss_fn(gt_tensor, image_tensor).item()
-    return lpips_value
+    return 0
 
 
 def batchify(fn, chunk):
