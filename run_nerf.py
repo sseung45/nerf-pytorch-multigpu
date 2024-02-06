@@ -937,7 +937,6 @@ def train(rank, world_size):
                 wandb.log({"PSNR": psnr_test, "SSIM": ssim_test, "LPIPS": lpips_test}, step=i)
     
         if i%args.i_print==0 and rank == 0:
-            print("rank: ", rank)
             tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}")
         global_step += 1
     
