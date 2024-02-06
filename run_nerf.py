@@ -32,6 +32,13 @@ loss_fn = LPIPS(net='vgg')
 
 
 def cal_psnr(gt_tensor, image_path):
+    image = cv2.cvtColor(image_path, cv2.COLOR_BGR2RGB)  # Convert BGR to RGB (if needed)
+
+    # Normalize the image
+    image_01 = image / 255.0
+
+    print("Image shape:", image.shape)
+    print("RGB values in 0-1 range:\n", image_01)
     return 0
 
 def cal_ssim(gt_tensor, image_path):
