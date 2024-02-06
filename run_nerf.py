@@ -894,9 +894,8 @@ def train(rank, world_size):
                     print(target.shape)
                     print("rgb+++++++++++++++++++")
                     print(rgb.shape)
-                    win_size = max(target.shape[0], target.shape[1])
-                    win_size = max(win_size, 7)
-                    ssim_test += ssim(target.cpu().numpy(), rgb.cpu().numpy(), multichannel=True, win_size=win_size)
+                    win_size = min(target.shape[0], target.shape[1])
+                    ssim_test += ssim(target.cpu().numpy().transpose(1, 2, 0), rgb.cpu().numpy().transpose(1, 2, 0), multichannel=True, win_size=win_size)
                 
                 len_test = len(i_val)
                 psnr_test /= len_test
