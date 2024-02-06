@@ -862,12 +862,13 @@ def train(rank, world_size):
             #     imageio.mimwrite(moviebase + 'rgb_still.mp4', to8b(rgbs_still), fps=30, quality=8)
 
         if rank == 0 and i%args.i_testset==0 and i > 0:
+            '''
             testsavedir = os.path.join(basedir, expname, 'testset_{:06d}'.format(i))
             os.makedirs(testsavedir, exist_ok=True)
             print('test poses shape', poses[i_test].shape)
             with torch.no_grad():
                 render_path(device, poses[i_test], hwf, K, args.chunk, render_kwargs_test, gt_imgs=images[i_test], savedir=testsavedir)
-            print('Saved test set')
+            print('Saved test set')'''
 
             # Evaluate test set
             if args.eval_test:
