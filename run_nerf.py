@@ -884,12 +884,14 @@ def train(rank, world_size):
                 psnr_test = 0.0
                 ssim_test = 0.0
                 lpips_test = 0.0
+                idx = 0
                 for i in i_test:
-                    print("i:  ",i)
-                    test_image = os.path.join(testsavedir, '{:03d}.png'.format(i))
+                    print("i:  ", i)
+                    test_image = os.path.join(testsavedir, '{:03d}.png'.format(idx))
                     psnr_test += cal_psnr(images[i], test_image)
                     ssim_test += cal_ssim(images[i], test_image)
                     lpips_test += cal_lpips(images[i], test_image)
+                    idx += 1
                 len_test = len(i_test)
                 psnr_test /= len_test
                 ssim_test /= len_test
