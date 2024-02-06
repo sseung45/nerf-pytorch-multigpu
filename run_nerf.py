@@ -891,9 +891,9 @@ def train(rank, world_size):
                                                         **render_kwargs_test)
                     psnr_test += mse2psnr(img2mse(rgb, target))
                     print("target================")
-                    print(target)
-                    print("rg+++++++++++++++b")
-                    print(rgb)
+                    print(target.shape)
+                    print("rgb+++++++++++++++++++")
+                    print(rgb.shape)
                     ssim_test += ssim(target.cpu().numpy(), rgb.cpu().numpy(), multichannel=True)
                 
                 len_test = len(i_val)
