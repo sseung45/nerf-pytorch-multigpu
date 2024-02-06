@@ -880,6 +880,15 @@ def train(rank, world_size):
             # Evaluate test set
             if args.eval_test:
                 print('Evaluation test set')
+                img_i=np.random.choice(i_val)
+                target = images[img_i]
+                pose = poses[img_i, :3,:4]
+                with torch.no_grad():
+                    rgb, disp, acc, extras = render(H, W, focal, chunk=args.chunk, c2w=pose,
+                                                        **render_kwargs_test)
+                psnr = mse2psnr(img2mse(rgb, target))
+                print("psnr: +++++++++++", psnr)
+                '''
                 gt_image = images[i_test]
                 psnr_test = 0.0
                 ssim_test = 0.0
@@ -896,7 +905,7 @@ def train(rank, world_size):
                 psnr_test /= len_test
                 ssim_test /= len_test
                 lpips_test /= len_test
-                tqdm.write(f"[TEST] PSNR: {psnr_test.item()}  SSIM: {ssim_test.item()}  LPIPS: {lpips_test.item()}")
+                tqdm.write(f"[TEST] PSNR: {psnr_test.item()}  SSIM: {ssim_test.item()}  LPIPS: {lpips_test.item()}")'''
 
     
         if rank == 0 and i%args.i_print==0:
