@@ -914,7 +914,7 @@ def train(rank, world_size):
 
         # Evaluate test set
         if i%args.i_eval==0 and i > 0 and rank == 0:
-            print('Evaluation test set')
+            print('Evaluate test set')
             psnr_test = 0.0
             ssim_test = 0.0
             lpips_test = 0.0
