@@ -34,8 +34,11 @@ loss_fn = LPIPS(net='vgg')
 def cal_psnr(gt_tensor, image_path):
     image = cv2.imread(image_path)
     gt_image = gt_tensor.permute(1, 2, 0).cpu().numpy()
-    psnr_value = cv2.PSNR(gt_image, image)
-    return psnr_value
+    mse = np.mean((gt_image - image) ** 2)
+    if mse == 0:
+        return float('inf')
+    max_pixel = 255.0
+    return 20 * np.log10(max_pixel / np.sqrt(mse))
 
 
 def cal_ssim(gt_tensor, image_path):
