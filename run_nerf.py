@@ -29,7 +29,6 @@ from math import exp
 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
 DEBUG = False
-loss_fn = LPIPS(net='vgg')
 
 
 def gaussian(window_size, sigma):
@@ -605,6 +604,7 @@ def train(rank, world_size):
     parser = config_parser()
     args = parser.parse_args()
     mse2psnr = lambda x : -10. * torch.log(x) / torch.log(torch.Tensor([10.]).to(device))
+    loss_fn = LPIPS(net='vgg')
 
     # Load data
     K = None
@@ -921,7 +921,7 @@ def train(rank, world_size):
                                                         **render_kwargs_test)
                     psnr_test += mse2psnr(img2mse(rgb, target))
                     ssim_test += ssim(target, rgb)
-                    lpips_test += loss_fn(target.unsqueeze(0), rgb.unsqueeze(0))
+                    lpips_test += loss_fn(target.permute(2,0,1), rgb.permute(2,0,1))
                 
                 len_test = len(i_val)
                 psnr_test /= len_test
