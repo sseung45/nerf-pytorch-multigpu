@@ -921,7 +921,7 @@ def train(rank, world_size):
                                                         **render_kwargs_test)
                     psnr_test += mse2psnr(img2mse(rgb, target))
                     ssim_test += ssim(target, rgb)
-                    lpips_test += loss_fn(target.permute(2,0,1), rgb.permute(2,0,1))
+                    lpips_test += loss_fn(target.permute(2,0,1).to(device), rgb.permute(2,0,1).to(device))
                 
                 len_test = len(i_val)
                 psnr_test /= len_test
