@@ -890,11 +890,12 @@ def train(rank, world_size):
                         rgb, disp, acc, extras = render(device, H, W, K, chunk=args.chunk, c2w=pose,
                                                         **render_kwargs_test)
                     psnr_test += mse2psnr(img2mse(rgb, target))
+                    print(target.cpu().numpy())
                     ssim_test += ssim(target.cpu().numpy(), rgb.cpu().numpy(), multichannel=True)
                 
                 len_test = len(i_val)
                 psnr_test /= len_test
-                ssim_tes /= len_test
+                ssim_test /= len_test
                 lpips_test /= len_test
                 tqdm.write(f"[TEST] PSNR: {psnr_test.item()}  SSIM: {ssim_test.item()}")
                 #tqdm.write(f"[TEST] PSNR: {psnr_test.item()}  SSIM: {ssim_test.item()}  LPIPS: {lpips_test.item()}")
