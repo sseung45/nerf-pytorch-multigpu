@@ -31,24 +31,28 @@ DEBUG = False
 loss_fn = LPIPS(net='vgg')
 
 
-def cal_psnr(img1, img2):
-    mse = np.mean((img1 - img2) ** 2)
-    if mse == 0:
-        return float('inf')
-    max_pixel = 255.0
-    return 20 * np.log10(max_pixel / np.sqrt(mse))
+def cal_psnr(gt_tensor, image_path):
+    image = cv2.imread(image_path)
+    gt_image = gt_tensor.permute(1, 2, 0).cpu().numpy()
+    psnr_value = cv2.PSNR(gt_image, image)
+    return psnr_value
 
 
-def cal_ssim(img1, img2):
-    gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-    gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-    return ssim(gray1, gray2)
+def cal_ssim(gt_tensor, image_path):
+    image = cv2.imread(image_path)
+    gt_image = gt_tensor.permute(1, 2, 0).cpu().numpy()
+    gray_gt_image = cv2.cvtColor(gt_image, cv2.COLOR_RGB2GRAY)
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    ssim_value = ssim(gray_gt_image, gray_image)
+    return ssim_value
 
 
-def cal_lpips(img1, img2):
-    img1_tensor = torch.tensor(img1).unsqueeze(0).permute(0, 3, 1, 2).float() / 255.0
-    img2_tensor = torch.tensor(img2).unsqueeze(0).permute(0, 3, 1, 2).float() / 255.0
-    return loss_fn(img1_tensor, img2_tensor).item()
+def cal_lpips(gt_tensor, image_path):
+    image = cv2.imread(image_path)
+    image_tensor = torch.tensor(image).permute(2, 0, 1).unsqueeze(0).float() / 255.0
+    gt_tensor = gt_tensor.unsqueeze(0).float() / 255.0
+    lpips_value = loss_fn(gt_tensor, image_tensor).item()
+    return lpips_value
 
 
 def batchify(fn, chunk):
@@ -887,13 +891,9 @@ def train(rank, world_size):
                 lpips_test = 0.0
                 for i in i_test:
                     test_image = os.path.join(testsavedir, '{:03d}.png'.format(i))
-                    gt = os.path.join(testsavedir, 'gt_{:03d}.png'.format(i))
-                    print(gt)
-                    print(gt_image[i])
-                    imageio.imwrite(gt, gt_image[i])
-                    psnr_test += float(cal_psnr(gt, test_image))
-                    ssim_test += float(cal_ssim(gt, test_image))
-                    lpips_test += float(cal_lpips(gt, test_image))
+                    psnr_test += float(cal_psnr(gt_image[i], test_image))
+                    ssim_test += float(cal_ssim(gt_image[i], test_image))
+                    lpips_test += float(cal_lpips(gt_image[i], test_image))
                 len_test = len(i_test)
                 psnr_test /= len_test
                 ssim_test /= len_test
