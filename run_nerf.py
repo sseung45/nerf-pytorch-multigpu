@@ -22,13 +22,14 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 import cv2
+from lpips import LPIPS
 from torch.autograd import Variable
 from math import exp
-from lpipsPyTorch import lpips
 
 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
 DEBUG = False
+loss_fn = LPIPS(net='vgg')
 
 
 def gaussian(window_size, sigma):
@@ -920,7 +921,7 @@ def train(rank, world_size):
                                                         **render_kwargs_test)
                     psnr_test += mse2psnr(img2mse(rgb, target))
                     ssim_test += ssim(target, rgb)
-                    lpips_test += lpips(target, rgb, net_type='vgg')
+                    lpips_test += loss_fn(target, rgb)
                 
                 len_test = len(i_val)
                 psnr_test /= len_test
