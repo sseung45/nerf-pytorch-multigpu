@@ -32,9 +32,6 @@ loss_fn = LPIPS(net='vgg')
 
 
 def cal_psnr(gt_tensor, image_path):
-    image = imageio.imread(image_path)
-    print(image, image.dtype)
-    print(gt_tensor, gt_tensor.dtype)
     return 0
 
 def cal_ssim(gt_tensor, image_path):
@@ -876,6 +873,7 @@ def train(rank, world_size):
             if args.eval_test:
                 print('Evaluation test set')
                 gt_image = images[i_test]
+                print(gt_image)
                 psnr_test = 0.0
                 ssim_test = 0.0
                 lpips_test = 0.0
