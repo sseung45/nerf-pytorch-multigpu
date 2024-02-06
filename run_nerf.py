@@ -874,6 +874,7 @@ def train(rank, world_size):
             if args.eval_test:
                 print('Evaluation test set')
                 gt_image = images[i_test]
+                print(gt_image.shape)
                 print(gt_image)
                 psnr_test = 0.0
                 ssim_test = 0.0
