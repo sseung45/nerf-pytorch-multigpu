@@ -32,14 +32,11 @@ loss_fn = LPIPS(net='vgg')
 
 
 def cal_psnr(gt_tensor, image_path):
+    gt = np.array(gt_tensor.to('cpu'))
     image = cv2.imread(image_path)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert BGR to RGB (if needed)
-
-    # Normalize the image
-    image_01 = image / 255.0
-
-    print("Image shape:", image.shape)
-    print("RGB values in 0-1 range:\n", image_01)
+    image = image / 255.
+    psnr = cv2.PSNR(gt, image)
+    print(psnr)
     return 0
 
 def cal_ssim(gt_tensor, image_path):
