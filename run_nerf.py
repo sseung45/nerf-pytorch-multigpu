@@ -880,32 +880,18 @@ def train(rank, world_size):
             # Evaluate test set
             if args.eval_test:
                 print('Evaluation test set')
-                img_i=np.random.choice(i_val)
-                target = images[img_i]
-                pose = poses[img_i, :3,:4]
-                with torch.no_grad():
-                    rgb, disp, acc, extras = render(device, H, W, K, chunk=args.chunk, c2w=pose,
-                                                        **render_kwargs_test)
-                psnr = mse2psnr(img2mse(rgb, target))
-                print("psnr: +++++++++++", psnr)
-                '''
-                gt_image = images[i_test]
                 psnr_test = 0.0
-                ssim_test = 0.0
-                lpips_test = 0.0
-                idx = 0
-                for i in i_test:
-                    print("i:  ", i)
-                    test_image = os.path.join(testsavedir, '{:03d}.png'.format(idx))
-                    psnr_test += cal_psnr(images[i], test_image)
-                    ssim_test += cal_ssim(images[i], test_image)
-                    lpips_test += cal_lpips(images[i], test_image)
-                    idx += 1
-                len_test = len(i_test)
-                psnr_test /= len_test
-                ssim_test /= len_test
-                lpips_test /= len_test
-                tqdm.write(f"[TEST] PSNR: {psnr_test.item()}  SSIM: {ssim_test.item()}  LPIPS: {lpips_test.item()}")'''
+                for img_i in i_val:
+                    target = images[img_i]
+                    pose = poses[img_i, :3,:4]
+                    with torch.no_grad():
+                        rgb, disp, acc, extras = render(device, H, W, K, chunk=args.chunk, c2w=pose,
+                                                        **render_kwargs_test)
+                    psnr_test += mse2psnr(img2mse(rgb, target))
+                
+                psnr_test /= len(i_val)
+                tqdm.write(f"[TEST] PSNR: {psnr_test.item()}")
+                #tqdm.write(f"[TEST] PSNR: {psnr_test.item()}  SSIM: {ssim_test.item()}  LPIPS: {lpips_test.item()}")
 
     
         if rank == 0 and i%args.i_print==0:
