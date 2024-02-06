@@ -38,7 +38,7 @@ def cal_psnr(gt_tensor, image_path):
     mse = np.mean((gt - image) ** 2)
     psnr = 20 * np.log10(1.0 / np.sqrt(mse))
     print("psnr: =======================", psnr)
-    return psnr
+    return float(psnr)
 
 def cal_ssim(gt_tensor, image_path):
     return 0
