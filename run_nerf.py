@@ -35,7 +35,7 @@ def cal_psnr(gt_tensor, image_path):
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image_tensor = torch.tensor(image).permute(2, 0, 1)
-    gt_image = gt_tensor.permute(1, 2, 0).cpu().numpy()
+    gt_image = gt_tensor.cpu().numpy()
     mse = np.mean((gt_image - image_tensor.numpy()) ** 2)
     if mse == 0:
         return float('inf')
