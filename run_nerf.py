@@ -33,9 +33,8 @@ loss_fn = LPIPS(net='vgg')
 
 def cal_psnr(gt_tensor, image_path):
     image = cv2.imread(image_path)
-    gt = np.array(gt_tensor.to('cpu'))
-    print(image, image.dtype)
-    print(gt, gt.dtype)
+    print(image, image.dtype, image.type)
+    print(gt_tensor, gt_tensor.dtype, gt_tensor.type)
     return 0
 
 def cal_ssim(gt_tensor, image_path):
