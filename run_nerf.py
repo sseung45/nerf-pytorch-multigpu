@@ -47,7 +47,10 @@ def cal_ssim(gt_tensor, image_path):
     image = cv2.imread(image_path)
     gt_image = gt_tensor.cpu().numpy()
     data_range = 1 if image.dtype == torch.float32 else 255
-    ssim_value = ssim(gt_image, image, data_range=data_range, multichannel=True)
+    image_tensor = torch.tensor(image.transpose(2, 0, 1))
+    win_size = min(image_tensor.shape[1], image_tensor.shape[2])
+    win_size = min(win_size, 7)
+    ssim_value = ssim(gt_image, image, data_range=data_range, multichannel=True, win_size=win_size)
     return ssim_value
 
 
