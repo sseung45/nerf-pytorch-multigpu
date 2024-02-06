@@ -576,21 +576,17 @@ def config_parser():
     parser.add_argument("--llffhold", type=int, default=8, 
                         help='will take every 1/N images as LLFF test set, paper uses 8')
 
-    # logging/saving options
+    # log/save/evaluate options
     parser.add_argument("--i_print",   type=int, default=100, 
                         help='frequency of console printout and metric loggin')
-    parser.add_argument("--i_img",     type=int, default=500, 
-                        help='frequency of tensorboard image logging')
+    parser.add_argument("--i_eval",     type=int, default=1000, 
+                        help='frequency of evaluation')
     parser.add_argument("--i_weights", type=int, default=10000, 
                         help='frequency of weight ckpt saving')
     parser.add_argument("--i_testset", type=int, default=50000, 
                         help='frequency of testset saving')
     parser.add_argument("--i_video",   type=int, default=50000, 
                         help='frequency of render_poses video saving')
-    
-    # evaluation
-    parser.add_argument("--eval_test", action='store_true', 
-                        help='evaluate test set per i_testset iteration')
 
     # wandb
     parser.add_argument("--wandb", action='store_true', 
@@ -917,7 +913,7 @@ def train(rank, world_size):
             print('Saved test set')'''
 
         # Evaluate test set
-        if i%args.i_testset==0 and i > 0 and rank == 0:
+        if i%args.i_eval==0 and i > 0 and rank == 0:
             print('Evaluation test set')
             psnr_test = 0.0
             ssim_test = 0.0
