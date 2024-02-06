@@ -28,7 +28,7 @@ from lpips import LPIPS
 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
 DEBUG = False
-loss_fn = LPIPS(net='vgg')
+#####loss_fn = LPIPS(net='vgg')
 
 
 def cal_psnr(gt_tensor, image_path):
