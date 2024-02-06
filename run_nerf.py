@@ -35,6 +35,8 @@ def cal_psnr(gt_tensor, image_path):
     gt = np.array(gt_tensor.to('cpu'))
     image = cv2.imread(image_path)
     image = image / 255.
+    print('======================', image.dtype)
+    print('++++++++++++++++++++++', gt.dtype)
     psnr = cv2.PSNR(gt, image)
     print(psnr)
     return 0
