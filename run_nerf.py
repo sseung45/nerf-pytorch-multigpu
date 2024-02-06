@@ -22,8 +22,9 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 import cv2
-from skimage.metrics import structural_similarity as ssim
 from lpips import LPIPS
+from torch.autograd import Variable
+from math import exp
 
 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 np.random.seed(0)
@@ -31,21 +32,50 @@ DEBUG = False
 #####loss_fn = LPIPS(net='vgg')
 
 
-def cal_psnr(gt_tensor, image_path):
-    gt = np.array(gt_tensor.to('cpu'))
-    image = cv2.imread(image_path)
-    image = image / 255.
-    mse = np.mean((gt - image) ** 2)
-    psnr = 20 * np.log10(1.0 / np.sqrt(mse))
-    print("psnr: =======================", psnr)
-    return float(psnr)
-
-def cal_ssim(gt_tensor, image_path):
-    return 0
+def gaussian(window_size, sigma):
+    gauss = torch.Tensor([exp(-(x - window_size // 2) ** 2 / float(2 * sigma ** 2)) for x in range(window_size)])
+    return gauss / gauss.sum()
 
 
-def cal_lpips(gt_tensor, image_path):
-    return 0
+def create_window(window_size, channel):
+    _1D_window = gaussian(window_size, 1.5).unsqueeze(1)
+    _2D_window = _1D_window.mm(_1D_window.t()).float().unsqueeze(0).unsqueeze(0)
+    window = Variable(_2D_window.expand(channel, 1, window_size, window_size).contiguous())
+    return window
+
+
+def ssim(img1, img2, window_size=11, size_average=True):
+    channel = img1.size(-3)
+    window = create_window(window_size, channel)
+
+    if img1.is_cuda:
+        window = window.cuda(img1.get_device())
+    window = window.type_as(img1)
+
+    return _ssim(img1, img2, window, window_size, channel, size_average)
+
+
+def _ssim(img1, img2, window, window_size, channel, size_average=True):
+    mu1 = F.conv2d(img1, window, padding=window_size // 2, groups=channel)
+    mu2 = F.conv2d(img2, window, padding=window_size // 2, groups=channel)
+
+    mu1_sq = mu1.pow(2)
+    mu2_sq = mu2.pow(2)
+    mu1_mu2 = mu1 * mu2
+
+    sigma1_sq = F.conv2d(img1 * img1, window, padding=window_size // 2, groups=channel) - mu1_sq
+    sigma2_sq = F.conv2d(img2 * img2, window, padding=window_size // 2, groups=channel) - mu2_sq
+    sigma12 = F.conv2d(img1 * img2, window, padding=window_size // 2, groups=channel) - mu1_mu2
+
+    C1 = 0.01 ** 2
+    C2 = 0.03 ** 2
+
+    ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
+
+    if size_average:
+        return ssim_map.mean()
+    else:
+        return ssim_map.mean(1).mean(1).mean(1)
 
 
 def batchify(fn, chunk):
@@ -890,7 +920,7 @@ def train(rank, world_size):
                         rgb, disp, acc, extras = render(device, H, W, K, chunk=args.chunk, c2w=pose,
                                                         **render_kwargs_test)
                     psnr_test += mse2psnr(img2mse(rgb, target))
-                    ssim_test += ssim(target.cpu().numpy(), rgb.cpu().numpy(), multichannel=True)
+                    ssim_test += ssim(target, rgb)
                 
                 len_test = len(i_val)
                 psnr_test /= len_test
