@@ -33,12 +33,12 @@ loss_fn = LPIPS(net='vgg')
 
 def cal_psnr(gt_tensor, image_path):
     gt = np.array(gt_tensor.to('cpu'))
-    gt = gt * 255.
     image = cv2.imread(image_path)
+    image = image / 255.
     mse = np.mean((gt - image) ** 2)
     
     # Calculate PSNR
-    psnr = 20 * np.log10(255.0 / np.sqrt(mse))
+    psnr = 20 * np.log10(1.0 / np.sqrt(mse))
     print("psnr: =======================", psnr)
     return 0
 
