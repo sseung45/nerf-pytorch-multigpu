@@ -911,6 +911,7 @@ def train(rank, world_size):
             print('Saved test set')
 
         # Evaluate test set
+        '''
         if i%args.i_eval==0 and i > 0:
             print('Evaluate test set')
             loss_test = 0.0
@@ -955,6 +956,7 @@ def train(rank, world_size):
                 tqdm.write(f"[TEST] Iter: {i} LOSS: {loss_final.item()} PSNR: {psnr_final.item()} SSIM: {ssim_final.item()} LPIPS: {lpips_final.item()}")
                 if args.wandb:
                     wandb.log({"LOSS": loss_test, "PSNR": psnr_test, "SSIM": ssim_test, "LPIPS": lpips_test}, step=i)
+        '''
     
         if i%args.i_print==0:
             tqdm.write(f"[TRAIN {rank}] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}")
