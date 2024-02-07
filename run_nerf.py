@@ -943,7 +943,7 @@ def train(rank, world_size):
                 psnr_final = 0.0
                 ssim_final = 0.0
                 lpips_final = 0.0
-                dist.all_gather(loss_all, loss_final)
+                dist.all_gather(loss_all, loss_test)
                 dist.all_gather(psnr_all, psnr_test)
                 dist.all_gather(ssim_all, ssim_test)
                 dist.all_gather(lpips_all, lpips_test)
