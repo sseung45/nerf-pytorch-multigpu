@@ -911,7 +911,7 @@ def train(rank, world_size):
             print('Saved test set')
 
         # Evaluate test set
-        if i%args.i_eval==0 and i > 0 and rank == 0:
+        if i%args.i_eval==0 and i > 0:
             print('Evaluate test set')
             loss_test = 0.0
             psnr_test = 0.0
@@ -932,18 +932,47 @@ def train(rank, world_size):
             psnr_test /= len_test
             ssim_test /= len_test
             lpips_test /= len_test
-            tqdm.write(f"[TEST] Iter: {i} LOSS: {loss_test.item()} PSNR: {psnr_test.item()} SSIM: {ssim_test.item()} LPIPS: {lpips_test.item()}")
-            if args.wandb:
-                wandb.log({"LOSS": loss_test, "PSNR": psnr_test, "SSIM": ssim_test, "LPIPS": lpips_test}, step=i)
+            dist.barrier()
+
+            if rank == 0:
+                loss_all = []
+                psnr_all = []
+                ssim_all = []
+                lpips_all = []
+                loss_final = 0.0
+                psnr_final = 0.0
+                ssim_final = 0.0
+                lpips_final = 0.0
+                dist.all_gather(loss_all, loss_final)
+                dist.all_gather(psnr_all, psnr_test)
+                dist.all_gather(ssim_all, ssim_test)
+                dist.all_gather(lpips_all, lpips_test)
+                loss_final = gather_metrics(loss_all, loss_final)
+                psnr_final = gather_metrics(psnr_all, psnr_final)
+                ssim_final = gather_metrics(ssim_all, ssim_final)
+                lpips_final = gather_metrics(lpips_all, lpips_final)
+                
+                tqdm.write(f"[TEST] Iter: {i} LOSS: {loss_final.item()} PSNR: {psnr_final.item()} SSIM: {ssim_final.item()} LPIPS: {lpips_final.item()}")
+                if args.wandb:
+                    wandb.log({"LOSS": loss_test, "PSNR": psnr_test, "SSIM": ssim_test, "LPIPS": lpips_test}, step=i)
     
-        if i%args.i_print==0 and rank == 0:
-            tqdm.write(f"[TRAIN] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}")
+        if i%args.i_print==0:
+            tqdm.write(f"[TRAIN {rank}] Iter: {i} Loss: {loss.item()}  PSNR: {psnr.item()}")
         global_step += 1
     
     if args.wandb and rank == 0:
         wandb.finish()
     print("training complete ", rank)
     cleanup()
+
+
+def gather_metrics(list, ret):
+    idx = 0
+    for val in list:
+        ret += val
+        idx += 1
+    return ret / idx
+
 
 def cleanup():
     dist.destroy_process_group()
